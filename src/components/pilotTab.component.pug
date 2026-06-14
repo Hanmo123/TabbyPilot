@@ -15,32 +15,57 @@
                 i.fas.fa-user(*ngIf='message.role === "user"')
                 i.fas.fa-robot(*ngIf='message.role === "assistant"')
                 span.message-role {{message.role === 'user' ? 'You' : 'Assistant'}}
-            .message-content {{message.content}}
+            
+            // 如果有 parts，按顺序渲染；否则显示 content
+            ng-container(*ngIf='message.parts && message.parts.length > 0; else simpleContent')
+                ng-container(*ngFor='let part of message.parts')
+                    .message-content(*ngIf='part.type === "text"') {{part.text}}
+                    .tool-execution(*ngIf='part.type === "tool-call" && part.toolCall')
+                        .tool-header
+                            i.fas.fa-terminal.me-2
+                            strong Execute Shell Command
+                        .tool-command
+                            code {{part.toolCall.args.command}}
+                        .tool-actions(*ngIf='part.toolCall.status === "pending"')
+                            button.btn.btn-sm.btn-success((click)='approveToolCall(part.toolCall)')
+                                i.fas.fa-check.me-1
+                                | Approve
+                            button.btn.btn-sm.btn-danger.ms-2((click)='rejectToolCall(part.toolCall)')
+                                i.fas.fa-times.me-1
+                                | Reject
+                        .tool-status(*ngIf='part.toolCall.status !== "pending"')
+                            span.badge.bg-success(*ngIf='part.toolCall.status === "approved"') Approved
+                            span.badge.bg-danger(*ngIf='part.toolCall.status === "rejected"') Rejected
+            
+            ng-template(#simpleContent)
+                .message-content(*ngIf='message.content') {{message.content}}
 
-        .message.assistant-message(*ngIf='currentAssistantMessage')
+        .message.assistant-message(*ngIf='isLoading && currentMessageParts.length > 0')
             .message-header
                 i.fas.fa-robot
                 span.message-role Assistant
-            .message-content {{currentAssistantMessage}}
-            .message-loading
+            
+            ng-container(*ngFor='let part of currentMessageParts')
+                .message-content(*ngIf='part.type === "text"') {{part.text}}
+                .tool-execution(*ngIf='part.type === "tool-call" && part.toolCall')
+                    .tool-header
+                        i.fas.fa-terminal.me-2
+                        strong Execute Shell Command
+                    .tool-command
+                        code {{part.toolCall.args.command}}
+                    .tool-actions(*ngIf='part.toolCall.status === "pending"')
+                        button.btn.btn-sm.btn-success((click)='approveToolCall(part.toolCall)')
+                            i.fas.fa-check.me-1
+                            | Approve
+                        button.btn.btn-sm.btn-danger.ms-2((click)='rejectToolCall(part.toolCall)')
+                            i.fas.fa-times.me-1
+                            | Reject
+                    .tool-status(*ngIf='part.toolCall.status !== "pending"')
+                        span.badge.bg-success(*ngIf='part.toolCall.status === "approved"') Approved
+                        span.badge.bg-danger(*ngIf='part.toolCall.status === "rejected"') Rejected
+            
+            .message-loading(*ngIf='isLoading')
                 i.fas.fa-circle-notch.fa-spin
-
-        .tool-execution(*ngFor='let execution of pendingToolExecutions')
-            .tool-header
-                i.fas.fa-terminal.me-2
-                strong Execute Shell Command
-            .tool-command
-                code {{execution.parameters.command}}
-            .tool-actions(*ngIf='execution.status === "pending"')
-                button.btn.btn-sm.btn-success((click)='approveExecution(execution)')
-                    i.fas.fa-check.me-1
-                    | Approve
-                button.btn.btn-sm.btn-danger.ms-2((click)='rejectExecution(execution)')
-                    i.fas.fa-times.me-1
-                    | Reject
-            .tool-status(*ngIf='execution.status !== "pending"')
-                span.badge.bg-success(*ngIf='execution.status === "approved"') Approved
-                span.badge.bg-danger(*ngIf='execution.status === "rejected"') Rejected
 
         .alert.alert-danger(*ngIf='error')
             i.fas.fa-exclamation-triangle.me-2

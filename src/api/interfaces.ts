@@ -20,8 +20,14 @@ export interface ChatMessage {
     id: string
     role: 'user' | 'assistant'
     content: string
-    toolCalls?: ToolCall[]
+    parts?: MessagePart[] // 消息的各个部分，按时间顺序排列
     timestamp: number
+}
+
+export interface MessagePart {
+    type: 'text' | 'tool-call'
+    text?: string // 当 type === 'text'
+    toolCall?: ToolCall // 当 type === 'tool-call'
 }
 
 export interface ToolCall {

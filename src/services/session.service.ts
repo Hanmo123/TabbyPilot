@@ -77,6 +77,18 @@ export class SessionService {
         }
     }
 
+    updateMessage(sessionId: string, message: ChatMessage): void {
+        const session = this.getSession(sessionId)
+        if (session) {
+            const index = session.messages.findIndex(m => m.id === message.id)
+            if (index !== -1) {
+                session.messages[index] = message
+                session.updatedAt = Date.now()
+                this.save()
+            }
+        }
+    }
+
     deleteSession(id: string): void {
         const sessions = this.getSessions()
         const index = sessions.findIndex(s => s.id === id)

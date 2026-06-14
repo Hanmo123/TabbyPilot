@@ -3,7 +3,7 @@ import { BaseTabComponent, SplitTabComponent } from 'tabby-core'
 import { BaseTerminalTabComponent } from 'tabby-terminal'
 import { PilotAIService } from '../services/ai.service'
 import { SessionService } from '../services/session.service'
-import { ChatMessage, ToolExecution } from '../api/interfaces'
+import { ChatMessage, ToolExecution, ToolCall, MessagePart } from '../api/interfaces'
 import { Subject } from 'rxjs'
 
 @Component({
@@ -20,7 +20,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
     currentSessionId: string = ''
     inputText: string = ''
     isLoading: boolean = false
-    currentAssistantMessage: string = ''
+    currentMessageParts: MessagePart[] = [] // 当前正在构建的消息片段
     pendingToolExecutions: ToolExecution[] = []
     error: string | null = null
 
@@ -96,7 +96,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         this.isLoading = true
 
         this.currentMessageId = this.generateId()
-        this.currentAssistantMessage = ''
+        this.currentMessageParts = []
 
         try {
             const aiMessages = this.messages.map(msg => ({
@@ -111,11 +111,35 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
                 return await this.handleToolCall(toolCall)
             }, terminalTab)
 
+            let currentTextBuffer = '' // 累积当前文本片段
+
             for await (const chunk of stream) {
                 if (chunk.type === 'text-delta') {
-                    this.currentAssistantMessage += chunk.textDelta
+                    currentTextBuffer += chunk.textDelta
                 } else if (chunk.type === 'tool-call') {
                     console.log('Tool call:', chunk)
+                    
+                    // 工具调用前，先保存当前累积的文本
+                    if (currentTextBuffer.trim()) {
+                        this.currentMessageParts.push({
+                            type: 'text',
+                            text: currentTextBuffer,
+                        })
+                        currentTextBuffer = ''
+                    }
+                    
+                    // 添加工具调用片段
+                    const toolCall: ToolCall = {
+                        id: chunk.toolCallId || this.generateId(),
+                        type: 'tool-call',
+                        toolName: chunk.toolName || '',
+                        args: chunk.args || {},
+                        status: 'pending',
+                    }
+                    this.currentMessageParts.push({
+                        type: 'tool-call',
+                        toolCall,
+                    })
                 } else if (chunk.type === 'tool-result') {
                     console.log('Tool result:', chunk)
                 } else if (chunk.type === 'finish') {
@@ -123,11 +147,26 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
                 }
             }
 
-            if (this.currentAssistantMessage.trim()) {
+            // 保存最后的文本片段
+            if (currentTextBuffer.trim()) {
+                this.currentMessageParts.push({
+                    type: 'text',
+                    text: currentTextBuffer,
+                })
+            }
+
+            if (this.currentMessageParts.length > 0) {
+                // 生成 content 字符串（所有文本片段的拼接）
+                const contentText = this.currentMessageParts
+                    .filter(p => p.type === 'text')
+                    .map(p => p.text)
+                    .join('')
+
                 const assistantMessage: ChatMessage = {
                     id: this.currentMessageId,
                     role: 'assistant',
-                    content: this.currentAssistantMessage.trim(),
+                    content: contentText.trim(),
+                    parts: this.currentMessageParts,
                     timestamp: Date.now(),
                 }
                 this.messages.push(assistantMessage)
@@ -139,15 +178,16 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
             this.error = error.message || 'An error occurred'
         } finally {
             this.isLoading = false
-            this.currentAssistantMessage = ''
+            this.currentMessageParts = []
             this.currentMessageId = ''
         }
     }
 
     async handleToolCall(toolCall: any): Promise<boolean> {
         return new Promise((resolve) => {
+            // 使用 AI SDK 提供的 toolCallId 作为唯一标识
             const execution: ToolExecution = {
-                id: this.generateId(),
+                id: toolCall.toolCallId,
                 toolName: toolCall.toolName,
                 parameters: toolCall.args,
                 status: 'pending',
@@ -158,19 +198,55 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         })
     }
 
-    approveExecution(execution: ToolExecution): void {
-        execution.status = 'approved'
-        if (execution.resolveCallback) {
+    approveToolCall(toolCall: ToolCall): void {
+        toolCall.status = 'approved'
+        
+        // 查找对应的 execution 并调用回调
+        const execution = this.pendingToolExecutions.find(e => e.id === toolCall.id)
+        if (execution && execution.resolveCallback) {
             execution.resolveCallback(true)
+            this.pendingToolExecutions = this.pendingToolExecutions.filter(e => e.id !== execution.id)
         }
+        
+        // 更新会话存储
+        this.updateToolCallInParts(toolCall)
     }
 
-    rejectExecution(execution: ToolExecution): void {
-        execution.status = 'rejected'
-        if (execution.resolveCallback) {
+    rejectToolCall(toolCall: ToolCall): void {
+        toolCall.status = 'rejected'
+        
+        // 查找对应的 execution 并调用回调
+        const execution = this.pendingToolExecutions.find(e => e.id === toolCall.id)
+        if (execution && execution.resolveCallback) {
             execution.resolveCallback(false)
+            this.pendingToolExecutions = this.pendingToolExecutions.filter(e => e.id !== execution.id)
         }
-        this.pendingToolExecutions = this.pendingToolExecutions.filter(e => e.id !== execution.id)
+        
+        // 更新会话存储
+        this.updateToolCallInParts(toolCall)
+    }
+
+    private updateToolCallInParts(toolCall: ToolCall): void {
+        // 更新当前正在构建的消息片段
+        for (const part of this.currentMessageParts) {
+            if (part.type === 'tool-call' && part.toolCall?.id === toolCall.id) {
+                part.toolCall = toolCall
+                return
+            }
+        }
+        
+        // 更新已保存消息中的 toolCall
+        for (const message of this.messages) {
+            if (message.parts) {
+                for (const part of message.parts) {
+                    if (part.type === 'tool-call' && part.toolCall?.id === toolCall.id) {
+                        part.toolCall = toolCall
+                        this.session.updateMessage(this.currentSessionId, message)
+                        return
+                    }
+                }
+            }
+        }
     }
 
     newChat(): void {
