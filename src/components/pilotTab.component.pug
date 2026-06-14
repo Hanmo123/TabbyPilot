@@ -81,7 +81,11 @@
             placeholder='Type your message... (Ctrl+Enter to send)',
             rows='3'
         )
-        button.btn.btn-primary((click)='sendMessage()', [disabled]='isLoading || !inputText.trim()')
-            i.fas.fa-paper-plane.me-2(*ngIf='!isLoading')
-            i.fas.fa-circle-notch.fa-spin.me-2(*ngIf='isLoading')
-            | Send
+        .pilot-input-actions
+            button.btn.btn-primary((click)='sendMessage()', [disabled]='isLoading || !inputText.trim()')
+                i.fas.fa-paper-plane.me-2(*ngIf='!isLoading')
+                i.fas.fa-circle-notch.fa-spin.me-2(*ngIf='isLoading')
+                | Send
+            button.btn.btn-danger.ms-2((click)='stopResponse()', *ngIf='isLoading', title='Stop Response')
+                i.fas.fa-stop.me-2
+                | Stop

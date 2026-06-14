@@ -26,6 +26,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
 
     private destroy$ = new Subject<void>()
     private currentMessageId: string = ''
+    private abortController: AbortController | null = null
 
     constructor(
         injector: Injector,
@@ -94,6 +95,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         
         this.inputText = ''
         this.isLoading = true
+        this.abortController = new AbortController()
 
         this.currentMessageId = this.generateId()
         this.currentMessageParts = []
@@ -114,6 +116,11 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
             let currentTextBuffer = '' // 累积当前文本片段
 
             for await (const chunk of stream) {
+                // 检查是否被中断
+                if (this.abortController?.signal.aborted) {
+                    break
+                }
+                
                 if (chunk.type === 'text-delta') {
                     currentTextBuffer += chunk.textDelta
                 } else if (chunk.type === 'tool-call') {
@@ -175,9 +182,12 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
 
         } catch (error: any) {
             console.error('Error in chat:', error)
-            this.error = error.message || 'An error occurred'
+            if (error.name !== 'AbortError') {
+                this.error = error.message || 'An error occurred'
+            }
         } finally {
             this.isLoading = false
+            this.abortController = null
             this.currentMessageParts = []
             this.currentMessageId = ''
         }
@@ -266,6 +276,12 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
 
     closeSidebar(): void {
         this.destroy()
+    }
+
+    stopResponse(): void {
+        if (this.abortController) {
+            this.abortController.abort()
+        }
     }
 
     private generateId(): string {

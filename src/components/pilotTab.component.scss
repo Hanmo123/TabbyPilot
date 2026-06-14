@@ -110,6 +110,7 @@
 
 .pilot-input {
     display: flex;
+    flex-direction: column;
     gap: 8px;
     padding: 16px;
     border-top: 1px solid var(--theme-border-color);
@@ -117,11 +118,12 @@
 }
 
 .pilot-input textarea {
-    flex: 1;
     resize: none;
     font-family: inherit;
 }
 
-.pilot-input button {
+.pilot-input-actions {
+    display: flex;
+    gap: 8px;
     align-self: flex-end;
 }
