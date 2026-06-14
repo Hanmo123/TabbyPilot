@@ -84,11 +84,18 @@ export default class PilotModule {
             // 检查是否已经有 Pilot 窗格
             const existingPilotTab = splitTab.getAllTabs().find(
                 tab => tab instanceof PilotTabComponent
-            )
+            ) as PilotTabComponent | undefined
             
             if (existingPilotTab) {
-                // 如果已经有 Pilot 窗格，直接聚焦它
+                // 如果 Pilot 窗格已经获得焦点，则关闭侧边栏
+                if (splitTab.getFocusedTab() === existingPilotTab) {
+                    existingPilotTab.closeSidebar()
+                    return
+                }
+                
+                // 否则，聚焦 Pilot 窗格并聚焦输入框
                 splitTab.focus(existingPilotTab)
+                existingPilotTab.focusInput()
                 return
             }
         } else {

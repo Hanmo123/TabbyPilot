@@ -75,6 +75,7 @@
 
     .pilot-input
         textarea.form-control(
+            #inputTextarea,
             [(ngModel)]='inputText',
             (keydown.enter)='handleEnterKey($event)',
             [disabled]='isLoading',

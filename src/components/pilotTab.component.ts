@@ -1,4 +1,4 @@
-import { Component, Input, HostBinding, OnInit, OnDestroy, Injector } from '@angular/core'
+import { Component, Input, HostBinding, OnInit, OnDestroy, Injector, ViewChild, ElementRef } from '@angular/core'
 import { BaseTabComponent, SplitTabComponent, RecoveryToken } from 'tabby-core'
 import { BaseTerminalTabComponent } from 'tabby-terminal'
 import { PilotAIService } from '../services/ai.service'
@@ -13,6 +13,7 @@ import { Subject } from 'rxjs'
 })
 export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDestroy {
     @Input() sessionId?: string
+    @ViewChild('inputTextarea') inputTextarea?: ElementRef<HTMLTextAreaElement>
 
     @HostBinding('class.pilot-tab') true
 
@@ -58,6 +59,12 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
     ngOnDestroy(): void {
         this.destroy$.next()
         this.destroy$.complete()
+    }
+
+    focusInput(): void {
+        setTimeout(() => {
+            this.inputTextarea?.nativeElement.focus()
+        }, 100)
     }
 
     /**
