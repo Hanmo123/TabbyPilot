@@ -8,6 +8,8 @@
                 i.fas.fa-plus
             button.btn.btn-sm.btn-link((click)='clearChat()', title='Clear Chat')
                 i.fas.fa-trash
+            button.btn.btn-sm.btn-link((click)='closeSidebar()', title='Close Sidebar')
+                i.fas.fa-times
 
     .pilot-messages
         .message(*ngFor='let message of messages', [class.user-message]='message.role === "user"', [class.assistant-message]='message.role === "assistant"')
