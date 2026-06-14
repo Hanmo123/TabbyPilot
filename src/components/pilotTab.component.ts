@@ -309,6 +309,10 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
     }
 
     closeSidebar(): void {
+        // 在关闭前，将 sessionId 保存到 parent SplitTab 上，以便下次打开时恢复
+        if (this.parent && this.currentSessionId) {
+            (this.parent as any).__pilotSessionId = this.currentSessionId;
+        }
         this.destroy()
     }
 

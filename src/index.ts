@@ -118,12 +118,21 @@ export default class PilotModule {
             await splitTab.addTab(activeTab, null, 'l')
         }
 
-        // 创建新的 PilotTab（每次创建新会话）
-        const newSession = this.sessionService.createSession()
+        // 创建新的 PilotTab
+        // 检查这个 SplitTab 是否已经有关联的 session（存储在动态属性中）
+        let sessionId: string = (splitTab as any).__pilotSessionId
+        if (!sessionId) {
+            // 没有关联的 session，创建新的
+            const newSession = this.sessionService.createSession();
+            sessionId = newSession.id;
+            // 将 sessionId 存储到 SplitTab 的动态属性中
+            (splitTab as any).__pilotSessionId = sessionId;
+        }
+        
         const pilotTab = this.tabsService.create({
             type: PilotTabComponent,
             inputs: {
-                sessionId: newSession.id,
+                sessionId: sessionId,
             },
         }) as PilotTabComponent
         
