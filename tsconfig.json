@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2016",
+    "module": "ES2015",
+    "moduleResolution": "node",
+    "lib": ["ES2016", "DOM"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "declaration": true,
+    "outDir": "dist",
+    "baseUrl": "src",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noImplicitAny": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

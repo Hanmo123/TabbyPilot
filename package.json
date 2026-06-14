@@ -1,0 +1,54 @@
+{
+  "name": "tabby-pilot",
+  "version": "0.1.0",
+  "description": "AI Agent for Tabby - Copilot-style chat assistant",
+  "keywords": [
+    "tabby-plugin"
+  ],
+  "main": "dist/index.js",
+  "typings": "typings/index.d.ts",
+  "scripts": {
+    "build": "webpack --progress --color",
+    "watch": "webpack --progress --color --watch"
+  },
+  "files": [
+    "dist",
+    "typings"
+  ],
+  "author": "Tabby Pilot",
+  "license": "MIT",
+  "devDependencies": {
+    "@ngtools/webpack": "^15.2.4",
+    "@types/node": "20.3.1",
+    "apply-loader": "^2.0.0",
+    "babel-loader": "^9.1.2",
+    "css-loader": "^6.7.3",
+    "pug": "^2.0.4",
+    "pug-loader": "^2.4.0",
+    "sass": "^1.58.3",
+    "sass-loader": "^13.2.0",
+    "source-map-loader": "^4.0.1",
+    "style-loader": "^3.3.1",
+    "to-string-loader": "^1.2.0",
+    "typescript": "~4.9.5",
+    "webpack": "^5.76.2",
+    "webpack-cli": "^5.0.1"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^1.0.0",
+    "ai": "^4.0.0",
+    "zod": "^3.23.0"
+  },
+  "peerDependencies": {
+    "@angular/animations": "^15",
+    "@angular/common": "^15",
+    "@angular/compiler": "^15",
+    "@angular/core": "^15",
+    "@angular/forms": "^15",
+    "@angular/platform-browser": "^15",
+    "@ng-bootstrap/ng-bootstrap": "^14",
+    "rxjs": "^7",
+    "tabby-core": "*",
+    "tabby-settings": "*"
+  }
+}

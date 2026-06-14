@@ -1,0 +1,60 @@
+.pilot-container
+    .pilot-header
+        .pilot-title
+            i.fas.fa-robot.me-2
+            strong Pilot Chat
+        .pilot-actions
+            button.btn.btn-sm.btn-link((click)='newChat()', title='New Chat')
+                i.fas.fa-plus
+            button.btn.btn-sm.btn-link((click)='clearChat()', title='Clear Chat')
+                i.fas.fa-trash
+
+    .pilot-messages
+        .message(*ngFor='let message of messages', [class.user-message]='message.role === "user"', [class.assistant-message]='message.role === "assistant"')
+            .message-header
+                i.fas.fa-user(*ngIf='message.role === "user"')
+                i.fas.fa-robot(*ngIf='message.role === "assistant"')
+                span.message-role {{message.role === 'user' ? 'You' : 'Assistant'}}
+            .message-content {{message.content}}
+
+        .message.assistant-message(*ngIf='currentAssistantMessage')
+            .message-header
+                i.fas.fa-robot
+                span.message-role Assistant
+            .message-content {{currentAssistantMessage}}
+            .message-loading
+                i.fas.fa-circle-notch.fa-spin
+
+        .tool-execution(*ngFor='let execution of pendingToolExecutions')
+            .tool-header
+                i.fas.fa-terminal.me-2
+                strong Execute Shell Command
+            .tool-command
+                code {{execution.parameters.command}}
+            .tool-actions(*ngIf='execution.status === "pending"')
+                button.btn.btn-sm.btn-success((click)='approveExecution(execution)')
+                    i.fas.fa-check.me-1
+                    | Approve
+                button.btn.btn-sm.btn-danger.ms-2((click)='rejectExecution(execution)')
+                    i.fas.fa-times.me-1
+                    | Reject
+            .tool-status(*ngIf='execution.status !== "pending"')
+                span.badge.bg-success(*ngIf='execution.status === "approved"') Approved
+                span.badge.bg-danger(*ngIf='execution.status === "rejected"') Rejected
+
+        .alert.alert-danger(*ngIf='error')
+            i.fas.fa-exclamation-triangle.me-2
+            | {{error}}
+
+    .pilot-input
+        textarea.form-control(
+            [(ngModel)]='inputText',
+            (keydown.enter)='$event.ctrlKey && sendMessage()',
+            [disabled]='isLoading',
+            placeholder='Type your message... (Ctrl+Enter to send)',
+            rows='3'
+        )
+        button.btn.btn-primary((click)='sendMessage()', [disabled]='isLoading || !inputText.trim()')
+            i.fas.fa-paper-plane.me-2(*ngIf='!isLoading')
+            i.fas.fa-circle-notch.fa-spin.me-2(*ngIf='isLoading')
+            | Send
