@@ -122,13 +122,16 @@ export default class PilotModule {
             inputs: {
                 sessionId: this.getCurrentOrCreateSessionId(), // 传入当前会话 ID 以延续会话
             },
-        })
+        }) as PilotTabComponent
         
         // 添加到右侧
         const focusedTab = splitTab.getFocusedTab()
         await splitTab.addTab(pilotTab, focusedTab, 'r')
         this.app.emitTabsChanged()
         await this.tabRecovery.saveTabs(this.app.tabs)
+        
+        // 聚焦输入框
+        pilotTab.focusInput()
     }
 
     private getCurrentOrCreateSessionId(): string {
