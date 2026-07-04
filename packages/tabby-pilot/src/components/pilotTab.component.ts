@@ -14,6 +14,7 @@ import { Subject } from 'rxjs'
 export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDestroy {
     @Input() sessionId?: string
     @ViewChild('inputTextarea') inputTextarea?: ElementRef<HTMLTextAreaElement>
+    @ViewChild('messageForm') messageForm?: ElementRef<HTMLFormElement>
 
     @HostBinding('class.pilot-tab') true
 
@@ -21,6 +22,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
     currentSessionId: string = ''
     inputText: string = ''
     isLoading: boolean = false
+    isComposing: boolean = false
     currentMessageParts: MessagePart[] = [] // 当前正在构建的消息片段
     pendingToolExecutions: ToolExecution[] = []
     error: string | null = null
@@ -104,14 +106,35 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         return null
     }
 
-    handleEnterKey(event: KeyboardEvent): void {
-        // Shift+Enter: 允许换行，不做处理
-        if (event.shiftKey) {
+    handleInputKeydown(event: KeyboardEvent): void {
+        if (event.key !== 'Enter' || event.shiftKey) {
             return
         }
-        
-        // Enter: 发送消息
+
+        // 中文输入法选词时，Enter 应该交给 IME，而不是触发发送
+        if (event.isComposing || this.isComposing || event.keyCode === 229) {
+            return
+        }
+
         event.preventDefault()
+        this.submitMessageForm()
+    }
+
+    handleCompositionStart(): void {
+        this.isComposing = true
+    }
+
+    handleCompositionEnd(): void {
+        this.isComposing = false
+    }
+
+    private submitMessageForm(): void {
+        const form = this.messageForm?.nativeElement
+        if (form?.requestSubmit) {
+            form.requestSubmit()
+            return
+        }
+
         this.sendMessage()
     }
 

@@ -75,19 +75,23 @@
             | {{error}}
 
     .pilot-input
-        textarea.form-control(
-            #inputTextarea,
-            [(ngModel)]='inputText',
-            (keydown.enter)='handleEnterKey($event)',
-            [disabled]='isLoading',
-            placeholder='Type your message... (Enter to send, Shift+Enter for new line)',
-            rows='3'
-        )
-        .pilot-input-actions
-            button.btn.btn-primary((click)='sendMessage()', [disabled]='isLoading || !inputText.trim()')
-                i.fas.fa-paper-plane.me-2(*ngIf='!isLoading')
-                i.fas.fa-circle-notch.fa-spin.me-2(*ngIf='isLoading')
-                | Send
-            button.btn.btn-danger.ms-2((click)='stopResponse()', *ngIf='isLoading', title='Stop Response')
-                i.fas.fa-stop.me-2
-                | Stop
+        form.pilot-input-form(#messageForm, (ngSubmit)='sendMessage()')
+            textarea.form-control(
+                #inputTextarea,
+                [(ngModel)]='inputText',
+                [ngModelOptions]='{standalone: true}',
+                (keydown)='handleInputKeydown($event)',
+                (compositionstart)='handleCompositionStart()',
+                (compositionend)='handleCompositionEnd()',
+                [disabled]='isLoading',
+                placeholder='Type your message... (Enter to send, Shift+Enter for new line)',
+                rows='3'
+            )
+            .pilot-input-actions
+                button.btn.btn-primary(type='submit', [disabled]='isLoading || !inputText.trim()')
+                    i.fas.fa-paper-plane.me-2(*ngIf='!isLoading')
+                    i.fas.fa-circle-notch.fa-spin.me-2(*ngIf='isLoading')
+                    | Send
+                button.btn.btn-danger.ms-2(type='button', (click)='stopResponse()', *ngIf='isLoading', title='Stop Response')
+                    i.fas.fa-stop.me-2
+                    | Stop

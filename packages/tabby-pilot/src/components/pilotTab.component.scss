@@ -117,7 +117,15 @@
     background: var(--theme-bg-color);
 }
 
+.pilot-input-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
 .pilot-input textarea {
+    flex: 1;
+    min-width: 0;
     resize: none;
     font-family: inherit;
 }
@@ -125,5 +133,5 @@
 .pilot-input-actions {
     display: flex;
     gap: 8px;
-    align-self: flex-end;
+    flex-shrink: 0;
 }
