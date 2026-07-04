@@ -1,12 +1,9 @@
 import { Injectable } from "@angular/core";
-import { streamText, tool } from "ai";
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { z } from "zod";
 import { ConfigService } from "tabby-core";
 import { BaseTerminalTabComponent } from "tabby-terminal";
 import { execSync } from "child_process";
+import { streamPilotChat } from "@tabby-pilot/ai-runtime";
 import { PilotProviderType } from "../api/interfaces";
-import { createOpenAIChatModel, createOpenAIResponsesModel } from "./providers/openai-language-model";
 
 @Injectable({ providedIn: "root" })
 export class PilotAIService {
@@ -34,138 +31,131 @@ export class PilotAIService {
       );
     }
 
-    const model = this.createModel(selectedProvider, providerConfig);
-
-    const result = await streamText({
-      model,
+    const result = streamPilotChat({
+      provider: selectedProvider,
+      providerConfig,
       messages,
-      maxSteps: 20,
       maxTokens: pilotConfig.maxTokens || 4096,
-      tools: {
-        executeShell: tool({
-          description:
-            "Execute a shell command in the terminal. The command will be sent to the left terminal pane if available. You can specify how long to wait for the command output. If the output is not ready within the timeout, you can use readTerminalOutput to read it later.",
-          parameters: z.object({
-            command: z.string().describe("The shell command to execute"),
-            timeoutSeconds: z
-              .number()
-              .optional()
-              .describe(
-                "How many seconds to wait for command output (default: 1). Should be as short as possible for instant commands, and be longer for slow commands like large file operations or network requests.",
-              ),
-          }),
-          execute: async ({ command, timeoutSeconds }, { toolCallId }) => {
-            const approved = await onToolCall({
-              type: "tool-call",
-              toolName: "executeShell",
-              toolCallId,
-              args: { command },
-            });
+      executeTool: async ({ toolName, toolCallId, input }) => {
+        if (toolName === "executeShell") {
+          return this.runExecuteShell(input, toolCallId, onToolCall, terminalTab);
+        }
 
-            if (!approved) {
-              return {
-                success: false,
-                error: "User rejected the command execution",
-                cancelled: true,
-              };
-            }
+        if (toolName === "readTerminalOutput") {
+          return this.runReadTerminalOutput(input, toolCallId, onToolCall, terminalTab);
+        }
 
-            try {
-              // 如果有终端，发送命令到终端并捕获输出
-              if (terminalTab && terminalTab.session) {
-                const timeoutMs = (timeoutSeconds || 5) * 1000;
-                const output = await this.executeInTerminal(
-                  terminalTab,
-                  command,
-                  timeoutMs,
-                );
-                return {
-                  success: true,
-                  output: output || "Command executed in terminal.",
-                  sentToTerminal: true,
-                };
-              } else {
-                // 回退方案：使用 execSync 在本地执行
-                const timeoutMs = (timeoutSeconds || 30) * 1000;
-                const output = execSync(command, {
-                  encoding: "utf-8",
-                  maxBuffer: 10 * 1024 * 1024,
-                  timeout: timeoutMs,
-                });
-                return {
-                  success: true,
-                  output: output.toString(),
-                  sentToTerminal: false,
-                };
-              }
-            } catch (error: any) {
-              return {
-                success: false,
-                error: error.message,
-                stderr: error.stderr?.toString() || "",
-                stdout: error.stdout?.toString() || "",
-              };
-            }
-          },
-        }),
-        readTerminalOutput: tool({
-          description:
-            "Read additional output from the terminal. Use this after executeShell if the initial timeout was too short and you need to wait longer for the command to complete.",
-          parameters: z.object({
-            timeoutSeconds: z
-              .number()
-              .optional()
-              .describe(
-                "How many seconds to wait for additional output (default: 5).",
-              ),
-          }),
-          execute: async ({ timeoutSeconds }, { toolCallId }) => {
-            const approved = await onToolCall({
-              type: "tool-call",
-              toolName: "readTerminalOutput",
-              toolCallId,
-              args: { timeoutSeconds },
-            });
-
-            if (!approved) {
-              return {
-                success: false,
-                error: "User rejected reading terminal output",
-                cancelled: true,
-              };
-            }
-
-            try {
-              if (terminalTab && terminalTab.session) {
-                const timeoutMs = (timeoutSeconds || 5) * 1000;
-                const output = await this.readTerminalOutput(
-                  terminalTab,
-                  timeoutMs,
-                );
-                return {
-                  success: true,
-                  output:
-                    output || "No additional output captured within timeout.",
-                };
-              } else {
-                return {
-                  success: false,
-                  error: "No terminal available to read output from.",
-                };
-              }
-            } catch (error: any) {
-              return {
-                success: false,
-                error: error.message,
-              };
-            }
-          },
-        }),
+        return { success: false, error: `Unknown tool: ${toolName}` };
       },
     });
 
-    for await (const chunk of result.fullStream) {
+    for await (const chunk of result) {
       yield chunk;
+    }
+  }
+
+  private async runExecuteShell(
+    input: any,
+    toolCallId: string,
+    onToolCall: (toolCall: any) => Promise<boolean>,
+    terminalTab?: BaseTerminalTabComponent<any> | null,
+  ) {
+    const command = input?.command || "";
+    const timeoutSeconds = input?.timeoutSeconds;
+    const approved = await onToolCall({
+      type: "tool-call",
+      toolName: "executeShell",
+      toolCallId,
+      args: { command },
+    });
+
+    if (!approved) {
+      return {
+        success: false,
+        error: "User rejected the command execution",
+        cancelled: true,
+      };
+    }
+
+    try {
+      // 如果有终端，发送命令到终端并捕获输出
+      if (terminalTab && terminalTab.session) {
+        const timeoutMs = (timeoutSeconds || 5) * 1000;
+        const output = await this.executeInTerminal(
+          terminalTab,
+          command,
+          timeoutMs,
+        );
+        return {
+          success: true,
+          output: output || "Command executed in terminal.",
+          sentToTerminal: true,
+        };
+      }
+
+      // 回退方案：使用 execSync 在本地执行
+      const timeoutMs = (timeoutSeconds || 30) * 1000;
+      const output = execSync(command, {
+        encoding: "utf-8",
+        maxBuffer: 10 * 1024 * 1024,
+        timeout: timeoutMs,
+      });
+      return {
+        success: true,
+        output: output.toString(),
+        sentToTerminal: false,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message,
+        stderr: error.stderr?.toString() || "",
+        stdout: error.stdout?.toString() || "",
+      };
+    }
+  }
+
+  private async runReadTerminalOutput(
+    input: any,
+    toolCallId: string,
+    onToolCall: (toolCall: any) => Promise<boolean>,
+    terminalTab?: BaseTerminalTabComponent<any> | null,
+  ) {
+    const timeoutSeconds = input?.timeoutSeconds;
+    const approved = await onToolCall({
+      type: "tool-call",
+      toolName: "readTerminalOutput",
+      toolCallId,
+      args: { timeoutSeconds },
+    });
+
+    if (!approved) {
+      return {
+        success: false,
+        error: "User rejected reading terminal output",
+        cancelled: true,
+      };
+    }
+
+    try {
+      if (terminalTab && terminalTab.session) {
+        const timeoutMs = (timeoutSeconds || 5) * 1000;
+        const output = await this.readTerminalOutput(terminalTab, timeoutMs);
+        return {
+          success: true,
+          output: output || "No additional output captured within timeout.",
+        };
+      }
+
+      return {
+        success: false,
+        error: "No terminal available to read output from.",
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message,
+      };
     }
   }
 
@@ -239,21 +229,6 @@ export class PilotAIService {
     }
 
     return { valid: true };
-  }
-
-  private createModel(provider: PilotProviderType, providerConfig: any) {
-    if (provider === 'openai-responses') {
-      return createOpenAIResponsesModel(providerConfig);
-    }
-    if (provider === 'openai-chat') {
-      return createOpenAIChatModel(providerConfig);
-    }
-
-    const anthropic = createAnthropic({
-      apiKey: providerConfig.apiKey,
-      baseURL: providerConfig.baseURL || undefined,
-    });
-    return anthropic(providerConfig.model);
   }
 
   private getProviderConfig(provider: PilotProviderType): any {

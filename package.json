@@ -3,22 +3,41 @@
   "version": "0.1.0",
   "description": "AI Agent for Tabby - Copilot-style chat assistant",
   "keywords": [
-    "tabby-plugin"
+    "tabby-plugin",
+    "tabby",
+    "ai",
+    "assistant",
+    "terminal",
+    "copilot"
   ],
   "main": "dist/index.js",
   "typings": "typings/index.d.ts",
   "scripts": {
-    "build": "webpack --progress --color",
-    "watch": "webpack --progress --color --watch"
+    "build:ai": "npm -w @tabby-pilot/ai-runtime run build",
+    "build": "npm run build:ai && webpack --progress --color",
+    "watch": "npm run build:ai && webpack --progress --color --watch",
+    "prepublishOnly": "npm run build"
   },
+  "workspaces": [
+    "packages/ai-runtime"
+  ],
   "files": [
     "dist",
     "typings"
   ],
-  "author": "Tabby Pilot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hanmo123/tabby-pilot.git"
+  },
+  "homepage": "https://github.com/Hanmo123/tabby-pilot#readme",
+  "bugs": {
+    "url": "https://github.com/Hanmo123/tabby-pilot/issues"
+  },
+  "author": "Hanmo123",
   "license": "MIT",
   "devDependencies": {
     "@ngtools/webpack": "^15.2.4",
+    "@tabby-pilot/ai-runtime": "file:packages/ai-runtime",
     "@types/node": "20.3.1",
     "apply-loader": "^2.0.0",
     "babel-loader": "^9.1.2",
@@ -34,11 +53,7 @@
     "webpack": "^5.76.2",
     "webpack-cli": "^5.0.1"
   },
-  "dependencies": {
-    "@ai-sdk/anthropic": "^1.0.0",
-    "ai": "^4.0.0",
-    "zod": "^3.23.0"
-  },
+  "dependencies": {},
   "peerDependencies": {
     "@angular/animations": "^15",
     "@angular/common": "^15",
