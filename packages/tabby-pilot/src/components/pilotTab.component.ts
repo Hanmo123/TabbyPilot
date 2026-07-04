@@ -182,7 +182,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
 
             const stream = this.ai.chat(aiMessages, async (toolCall) => {
                 return await this.handleToolCall(toolCall)
-            }, terminalTab, this.currentProvider)
+            }, terminalTab, this.currentProvider, this.currentSessionId)
 
             for await (const chunk of stream) {
                 // 检查是否被中断

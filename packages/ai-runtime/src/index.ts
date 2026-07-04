@@ -17,6 +17,7 @@ interface PilotRuntimeChatOptions {
   providerConfig: PilotProviderConfig
   messages: any[]
   maxTokens: number
+  promptCacheKey?: string
   executeTool: (request: {
     toolName: string
     toolCallId: string
@@ -42,6 +43,24 @@ export async function* streamPilotChat(options: PilotRuntimeChatOptions): AsyncI
     messages: options.messages,
     maxOutputTokens: options.maxTokens,
     stopWhen: isStepCount(20),
+    ...(options.provider === 'openai-responses' && options.promptCacheKey
+      ? {
+          providerOptions: {
+            openai: {
+              store: false,
+              promptCacheKey: options.promptCacheKey,
+            },
+          },
+        }
+      : options.provider === 'openai-responses'
+        ? {
+            providerOptions: {
+              openai: {
+                store: false,
+              },
+            },
+          }
+        : {}),
     tools: {
       executeShell: tool({
         description:

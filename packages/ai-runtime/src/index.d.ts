@@ -17,6 +17,7 @@ export interface PilotRuntimeChatOptions {
   providerConfig: PilotProviderConfig;
   messages: any[];
   maxTokens: number;
+  promptCacheKey?: string;
   executeTool: (request: PilotToolRequest) => Promise<any>;
 }
 

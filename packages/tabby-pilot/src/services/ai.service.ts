@@ -14,6 +14,7 @@ export class PilotAIService {
     onToolCall: (toolCall: any) => Promise<boolean>,
     terminalTab?: BaseTerminalTabComponent<any> | null,
     providerType?: PilotProviderType,
+    sessionId?: string,
   ) {
     const pilotConfig = this.config.store.pilot;
     const selectedProvider = providerType || pilotConfig.provider || 'anthropic';
@@ -36,6 +37,7 @@ export class PilotAIService {
       providerConfig,
       messages,
       maxTokens: pilotConfig.maxTokens || 4096,
+      promptCacheKey: this.buildPromptCacheKey(selectedProvider, providerConfig.model, sessionId),
       executeTool: async ({ toolName, toolCallId, input }) => {
         if (toolName === "executeShell") {
           return this.runExecuteShell(input, toolCallId, onToolCall, terminalTab);
@@ -229,6 +231,18 @@ export class PilotAIService {
     }
 
     return { valid: true };
+  }
+
+  private buildPromptCacheKey(
+    provider: PilotProviderType,
+    model: string,
+    sessionId?: string,
+  ): string | undefined {
+    if (provider !== 'openai-responses' || !sessionId || !model) {
+      return undefined;
+    }
+
+    return `tabby-pilot:${model}:${sessionId}`;
   }
 
   private getProviderConfig(provider: PilotProviderType): any {
