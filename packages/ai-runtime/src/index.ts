@@ -1,7 +1,7 @@
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
-import { isStepCount, streamText, tool } from 'ai'
+import { isStepCount, ToolLoopAgent, tool } from 'ai'
 import { z } from 'zod'
 
 type PilotProviderType = 'anthropic' | 'openai-responses' | 'openai-chat'
@@ -49,13 +49,10 @@ export async function* streamPilotChat(options: PilotRuntimeChatOptions): AsyncI
       }
     : undefined
 
-  const result = streamText({
+  const agent = new ToolLoopAgent({
     model,
     ...(!isOpenAIResponses && options.instructions ? { instructions: options.instructions } : {}),
-    messages: options.messages,
-    maxOutputTokens: options.maxTokens,
     stopWhen: isStepCount(20),
-    ...(openAIProviderOptions ? { providerOptions: openAIProviderOptions } : {}),
     tools: {
       executeShell: tool({
         description:
@@ -93,6 +90,12 @@ export async function* streamPilotChat(options: PilotRuntimeChatOptions): AsyncI
           }),
       }),
     },
+  })
+
+  const result = await agent.stream({
+    messages: options.messages,
+    maxOutputTokens: options.maxTokens,
+    ...(openAIProviderOptions ? { providerOptions: openAIProviderOptions } : {}),
   })
 
   const stream = (result as any).fullStream || (result as any).stream
