@@ -43,31 +43,7 @@
             ng-template(#simpleContent)
                 .message-content(*ngIf='message.content') {{message.content}}
 
-        .message.assistant-message(*ngIf='isLoading && currentMessageParts.length > 0')
-            .message-header
-                i.fas.fa-robot
-                span.message-role Assistant
-            
-            ng-container(*ngFor='let part of currentMessageParts')
-                .message-content(*ngIf='part.type === "text"') {{part.text}}
-                .tool-execution(*ngIf='part.type === "tool-call" && part.toolCall')
-                    .tool-header
-                        i.fas.fa-terminal.me-2
-                        strong Execute Shell Command
-                    .tool-command
-                        code {{part.toolCall.args.command}}
-                    .tool-actions(*ngIf='part.toolCall.status === "pending"')
-                        button.btn.btn-sm.btn-success((click)='approveToolCall(part.toolCall)')
-                            i.fas.fa-check.me-1
-                            | Approve
-                        button.btn.btn-sm.btn-danger.ms-2((click)='rejectToolCall(part.toolCall)')
-                            i.fas.fa-times.me-1
-                            | Reject
-                    .tool-status(*ngIf='part.toolCall.status !== "pending"')
-                        span.badge.bg-success(*ngIf='part.toolCall.status === "approved"') Approved
-                        span.badge.bg-danger(*ngIf='part.toolCall.status === "rejected"') Rejected
-            
-            .message-loading(*ngIf='isLoading')
+            .message-loading(*ngIf='isStreamingMessage(message)')
                 i.fas.fa-circle-notch.fa-spin
 
         .alert.alert-danger(*ngIf='error')

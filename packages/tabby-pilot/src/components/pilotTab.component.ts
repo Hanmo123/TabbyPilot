@@ -30,6 +30,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
 
     private destroy$ = new Subject<void>()
     private currentMessageId: string = ''
+    private currentAssistantMessage: ChatMessage | null = null
     private abortController: AbortController | null = null
 
     constructor(
@@ -158,23 +159,30 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         this.isLoading = true
         this.abortController = new AbortController()
 
+        const aiMessages = this.messages.map(msg => ({
+            role: msg.role,
+            content: msg.content,
+        }))
+
         this.currentMessageId = this.generateId()
         this.currentMessageParts = []
+        this.currentAssistantMessage = {
+            id: this.currentMessageId,
+            role: 'assistant',
+            content: '',
+            parts: this.currentMessageParts,
+            timestamp: Date.now(),
+        }
+        this.messages.push(this.currentAssistantMessage)
+        this.session.addMessage(this.currentSessionId, this.currentAssistantMessage)
 
         try {
-            const aiMessages = this.messages.map(msg => ({
-                role: msg.role,
-                content: msg.content,
-            }))
-
             // 获取终端引用
             const terminalTab = this.getTerminalTab()
 
             const stream = this.ai.chat(aiMessages, async (toolCall) => {
                 return await this.handleToolCall(toolCall)
             }, terminalTab, this.currentProvider)
-
-            let currentTextBuffer = '' // 累积当前文本片段
 
             for await (const chunk of stream) {
                 // 检查是否被中断
@@ -183,20 +191,10 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
                 }
                 
                 if (chunk.type === 'text-delta') {
-                    currentTextBuffer += chunk.textDelta
+                    this.appendAssistantText(chunk.textDelta || '')
                 } else if (chunk.type === 'tool-call') {
                     console.log('Tool call:', chunk)
-                    
-                    // 工具调用前，先保存当前累积的文本
-                    if (currentTextBuffer.trim()) {
-                        this.currentMessageParts.push({
-                            type: 'text',
-                            text: currentTextBuffer,
-                        })
-                        currentTextBuffer = ''
-                    }
-                    
-                    // 添加工具调用片段
+
                     const toolCall: ToolCall = {
                         id: chunk.toolCallId || this.generateId(),
                         type: 'tool-call',
@@ -204,41 +202,12 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
                         args: chunk.args || {},
                         status: 'pending',
                     }
-                    this.currentMessageParts.push({
-                        type: 'tool-call',
-                        toolCall,
-                    })
+                    this.appendAssistantToolCall(toolCall)
                 } else if (chunk.type === 'tool-result') {
                     console.log('Tool result:', chunk)
                 } else if (chunk.type === 'finish') {
                     break
                 }
-            }
-
-            // 保存最后的文本片段
-            if (currentTextBuffer.trim()) {
-                this.currentMessageParts.push({
-                    type: 'text',
-                    text: currentTextBuffer,
-                })
-            }
-
-            if (this.currentMessageParts.length > 0) {
-                // 生成 content 字符串（所有文本片段的拼接）
-                const contentText = this.currentMessageParts
-                    .filter(p => p.type === 'text')
-                    .map(p => p.text)
-                    .join('')
-
-                const assistantMessage: ChatMessage = {
-                    id: this.currentMessageId,
-                    role: 'assistant',
-                    content: contentText.trim(),
-                    parts: this.currentMessageParts,
-                    timestamp: Date.now(),
-                }
-                this.messages.push(assistantMessage)
-                this.session.addMessage(this.currentSessionId, assistantMessage)
             }
 
         } catch (error: any) {
@@ -247,10 +216,19 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
                 this.error = error.message || 'An error occurred'
             }
         } finally {
+            if (this.currentAssistantMessage) {
+                if (this.hasAssistantOutput()) {
+                    this.syncCurrentAssistantMessage(true)
+                } else {
+                    this.removeMessage(this.currentAssistantMessage.id)
+                }
+            }
+
             this.isLoading = false
             this.abortController = null
             this.currentMessageParts = []
             this.currentMessageId = ''
+            this.currentAssistantMessage = null
         }
     }
 
@@ -302,6 +280,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         for (const part of this.currentMessageParts) {
             if (part.type === 'tool-call' && part.toolCall?.id === toolCall.id) {
                 part.toolCall = toolCall
+                this.syncCurrentAssistantMessage(true)
                 return
             }
         }
@@ -348,6 +327,65 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         if (this.abortController) {
             this.abortController.abort()
         }
+    }
+
+    isStreamingMessage(message: ChatMessage): boolean {
+        return this.isLoading && message.id === this.currentMessageId
+    }
+
+    private appendAssistantText(textDelta: string): void {
+        if (!textDelta || !this.currentAssistantMessage) {
+            return
+        }
+
+        const lastPart = this.currentMessageParts[this.currentMessageParts.length - 1]
+        if (lastPart?.type === 'text') {
+            lastPart.text = (lastPart.text || '') + textDelta
+        } else {
+            this.currentMessageParts.push({
+                type: 'text',
+                text: textDelta,
+            })
+        }
+
+        this.syncCurrentAssistantMessage()
+    }
+
+    private appendAssistantToolCall(toolCall: ToolCall): void {
+        if (!this.currentAssistantMessage) {
+            return
+        }
+
+        this.currentMessageParts.push({
+            type: 'tool-call',
+            toolCall,
+        })
+        this.syncCurrentAssistantMessage()
+    }
+
+    private hasAssistantOutput(): boolean {
+        return this.currentMessageParts.length > 0 || !!this.currentAssistantMessage?.content
+    }
+
+    private syncCurrentAssistantMessage(persist: boolean = false): void {
+        if (!this.currentAssistantMessage) {
+            return
+        }
+
+        this.currentAssistantMessage.parts = this.currentMessageParts
+        this.currentAssistantMessage.content = this.currentMessageParts
+            .filter(part => part.type === 'text')
+            .map(part => part.text || '')
+            .join('')
+
+        if (persist) {
+            this.session.updateMessage(this.currentSessionId, this.currentAssistantMessage)
+        }
+    }
+
+    private removeMessage(messageId: string): void {
+        this.messages = this.messages.filter(message => message.id !== messageId)
+        this.session.removeMessage(this.currentSessionId, messageId)
     }
 
     private generateId(): string {

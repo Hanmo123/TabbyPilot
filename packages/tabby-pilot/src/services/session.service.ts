@@ -90,6 +90,18 @@ export class SessionService {
         }
     }
 
+    removeMessage(sessionId: string, messageId: string): void {
+        const session = this.getSession(sessionId)
+        if (session) {
+            const index = session.messages.findIndex(m => m.id === messageId)
+            if (index !== -1) {
+                session.messages.splice(index, 1)
+                session.updatedAt = Date.now()
+                this.save()
+            }
+        }
+    }
+
     deleteSession(id: string): void {
         const sessions = this.getSessions()
         const index = sessions.findIndex(s => s.id === id)
