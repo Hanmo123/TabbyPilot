@@ -88,17 +88,16 @@ After code changes, restart Tabby to see updates.
 
 ```
 tabby-pilot/
-├── src/
-│   ├── api/                  # TypeScript interfaces
-│   ├── components/           # Angular components (chat UI, settings)
-│   ├── services/             # AI service, session management
-│   ├── index.ts              # Main module
-│   ├── config.ts             # Configuration provider
-│   ├── hotkeys.ts            # Hotkey provider
-│   └── settings.ts           # Settings tab provider
-├── dist/                     # Build output
+├── packages/
+│   ├── ai-runtime/           # AI SDK runtime wrapper
+│   └── tabby-pilot/
+│       ├── src/              # Angular plugin source
+│       ├── dist/             # Plugin build output
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── webpack.config.mjs
+├── bun.lock
 ├── package.json
-├── webpack.config.mjs
 ├── README.md
 └── AGENTS.md                 # Complete development documentation
 ```
@@ -107,7 +106,7 @@ tabby-pilot/
 
 ### Plugin not loading?
 
-1. Check if `dist/index.js` exists
+1. Check if `packages/tabby-pilot/dist/index.js` exists
 2. Verify `package.json` has `"keywords": ["tabby-plugin"]`
 3. Check Tabby logs: `tail -f ~/Library/Logs/Tabby/log.log` (macOS)
 4. Open Tabby DevTools (Cmd+Shift+I) and check Console for errors

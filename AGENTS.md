@@ -38,7 +38,7 @@ bun add /path/to/tabby-pilot
 **必须使用 `externals` 而非 bundle**: Tabby 核心模块（Angular、tabby-core、tabby-settings）必须声明为 webpack externals 和 peerDependencies，否则会因重复实例化导致 Angular 依赖注入失败。
 
 ```javascript
-// webpack.config.mjs
+// packages/tabby-pilot/webpack.config.mjs
 externals: [
     '@angular/core',
     '@angular/common',
@@ -69,7 +69,7 @@ externals: [
 4. Providers 通过 `multi: true` 注册到 Tabby 核心
 
 ```typescript
-// src/index.ts
+// packages/tabby-pilot/src/index.ts
 @NgModule({
     providers: [
         { provide: ConfigProvider, useClass: PilotConfigProvider, multi: true },
@@ -119,30 +119,37 @@ Cmd+Shift+I (macOS) / Ctrl+Shift+I (Windows/Linux)
 # 3. Settings → Hotkeys 搜索 "pilot" 应显示快捷键
 
 # 验证构建产物
-ls -lh dist/index.js dist/index.js.map
+ls -lh packages/tabby-pilot/dist/index.js packages/tabby-pilot/dist/index.js.map
 ```
 
 ## 文件结构关键点
 
 ```
-src/
-├── api/
-│   ├── index.ts           # 导出类型
-│   └── interfaces.ts      # ChatMessage, ToolExecution 等接口
-├── components/
-│   ├── pilotTab.component.ts        # 聊天主界面
-│   ├── pilotTab.component.pug       # 模板
-│   ├── pilotTab.component.scss      # 样式
-│   ├── pilotSettingsTab.component.ts  # 设置页面
-│   ├── pilotSettingsTab.component.pug
-│   └── pilotSettingsTab.component.scss
-├── services/
-│   ├── ai.service.ts      # AI SDK 集成，streamText + tools
-│   └── session.service.ts # 会话管理和持久化
-├── config.ts              # ConfigProvider (默认值、热键)
-├── hotkeys.ts             # HotkeyProvider (热键定义)
-├── settings.ts            # SettingsTabProvider (设置标签)
-└── index.ts               # 模块入口，提供 NgModule
+packages/
+├── ai-runtime/
+│   ├── src/index.ts       # AI SDK runtime 封装
+│   └── package.json
+└── tabby-pilot/
+    ├── src/
+    │   ├── api/
+    │   │   ├── index.ts           # 导出类型
+    │   │   └── interfaces.ts      # ChatMessage, ToolExecution 等接口
+    │   ├── components/
+    │   │   ├── pilotTab.component.ts        # 聊天主界面
+    │   │   ├── pilotTab.component.pug       # 模板
+    │   │   ├── pilotTab.component.scss      # 样式
+    │   │   ├── pilotSettingsTab.component.ts  # 设置页面
+    │   │   ├── pilotSettingsTab.component.pug
+    │   │   └── pilotSettingsTab.component.scss
+    │   ├── services/
+    │   │   ├── ai.service.ts      # AI SDK 集成入口
+    │   │   └── session.service.ts # 会话管理和持久化
+    │   ├── config.ts              # ConfigProvider (默认值、热键)
+    │   ├── hotkeys.ts             # HotkeyProvider (热键定义)
+    │   ├── settings.ts            # SettingsTabProvider (设置标签)
+    │   └── index.ts               # 模块入口，提供 NgModule
+    ├── webpack.config.mjs
+    └── tsconfig.json
 ```
 
 ## 扩展开发建议
