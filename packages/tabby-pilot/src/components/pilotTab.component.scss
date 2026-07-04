@@ -15,6 +15,16 @@
     cursor: text;
 }
 
+:host {
+    --pilot-bg: var(--theme-bg, var(--theme-bg-color));
+    --pilot-fg: var(--theme-fg, var(--theme-fg-color));
+    --pilot-surface: var(--theme-bg-more, var(--theme-bg-alt-color, var(--theme-bg-color)));
+    --pilot-surface-strong: var(--theme-bg-more-2, var(--theme-border-color, var(--theme-bg-alt-color)));
+    --pilot-border: var(--theme-bg-more-2, var(--theme-border-color));
+    --pilot-user-bg: var(--theme-primary, var(--theme-accent-color));
+    --pilot-user-fg: var(--theme-primary-fg, white);
+}
+
 .pilot-actions button,
 .tool-actions button,
 .pilot-input-actions button {
@@ -31,8 +41,8 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: var(--theme-bg-color);
-    color: var(--theme-fg-color);
+    background: var(--pilot-bg);
+    color: var(--pilot-fg);
 }
 
 .pilot-header {
@@ -40,8 +50,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    border-bottom: 1px solid var(--theme-border-color);
-    background: var(--theme-bg-color);
+    border-bottom: 1px solid var(--pilot-border);
+    background: var(--pilot-bg);
 }
 
 .pilot-title {
@@ -143,24 +153,26 @@
     pre {
         padding: 10px 12px;
         border-radius: 6px;
-        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--pilot-border);
+        background: var(--pilot-surface-strong);
         overflow-x: auto;
         white-space: pre;
     }
 
     code {
         font-family: monospace;
+        color: inherit;
     }
 
     :not(pre) > code {
         padding: 1px 4px;
         border-radius: 4px;
-        background: rgba(0, 0, 0, 0.15);
+        background: var(--pilot-surface-strong);
     }
 
     blockquote {
         padding-left: 12px;
-        border-left: 3px solid var(--theme-border-color);
+        border-left: 3px solid var(--pilot-border);
         opacity: 0.85;
     }
 
@@ -176,7 +188,7 @@
     th,
     td {
         padding: 6px 8px;
-        border: 1px solid var(--theme-border-color);
+        border: 1px solid var(--pilot-border);
         text-align: left;
     }
 }
@@ -188,20 +200,20 @@
 
 .user-message {
     align-self: flex-end;
-    background: var(--theme-accent-color);
-    color: white;
+    background: var(--pilot-user-bg);
+    color: var(--pilot-user-fg);
 }
 
 .assistant-message {
     align-self: flex-start;
-    background: var(--theme-bg-alt-color);
+    background: var(--pilot-surface);
 }
 
 .tool-execution {
     padding: 12px;
-    border: 1px solid var(--theme-border-color);
+    border: 1px solid var(--pilot-border);
     border-radius: 8px;
-    background: var(--theme-bg-alt-color);
+    background: var(--pilot-surface);
 }
 
 .tool-header {
@@ -214,9 +226,14 @@
 .tool-command {
     margin-bottom: 12px;
     padding: 8px;
-    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--pilot-border);
+    background: var(--pilot-surface-strong);
     border-radius: 4px;
     font-family: monospace;
+}
+
+.tool-command code {
+    color: inherit;
 }
 
 .tool-actions {
@@ -233,8 +250,8 @@
     flex-direction: column;
     gap: 8px;
     padding: 16px;
-    border-top: 1px solid var(--theme-border-color);
-    background: var(--theme-bg-color);
+    border-top: 1px solid var(--pilot-border);
+    background: var(--pilot-bg);
 }
 
 .pilot-input-form {
