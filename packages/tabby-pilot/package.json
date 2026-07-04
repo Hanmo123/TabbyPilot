@@ -1,6 +1,6 @@
 {
   "name": "@tabby-pilot/plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI Agent for Tabby - Copilot-style chat assistant",
   "keywords": [
     "tabby-plugin",
