@@ -5,6 +5,16 @@ import { execSync } from "child_process";
 import { streamPilotChat } from "@tabby-pilot/ai-runtime";
 import { PilotProviderType } from "../api/interfaces";
 
+const PILOT_INSTRUCTIONS = [
+  "You are Pilot, an AI assistant embedded in the Tabby terminal.",
+  "Help the user with terminal-centric tasks in a concise, practical way.",
+  "Match the user's language.",
+  "Use the available tools when you need information from the system instead of guessing.",
+  "Before running a shell command, briefly state what you are going to inspect or do.",
+  "Prefer minimal, read-only commands unless the user clearly asks for a change.",
+  "When a tool returns output, base your answer on that output and say when something is uncertain.",
+].join(" ");
+
 @Injectable({ providedIn: "root" })
 export class PilotAIService {
   constructor(private config: ConfigService) {}
@@ -36,6 +46,7 @@ export class PilotAIService {
       provider: selectedProvider,
       providerConfig,
       messages,
+      instructions: PILOT_INSTRUCTIONS,
       maxTokens: pilotConfig.maxTokens || 4096,
       promptCacheKey: this.buildPromptCacheKey(selectedProvider, providerConfig.model, sessionId),
       executeTool: async ({ toolName, toolCallId, input }) => {

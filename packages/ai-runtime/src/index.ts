@@ -16,6 +16,7 @@ interface PilotRuntimeChatOptions {
   provider: PilotProviderType
   providerConfig: PilotProviderConfig
   messages: any[]
+  instructions?: string
   maxTokens: number
   promptCacheKey?: string
   executeTool: (request: {
@@ -37,30 +38,24 @@ interface PilotStreamChunk {
 
 export async function* streamPilotChat(options: PilotRuntimeChatOptions): AsyncIterable<PilotStreamChunk> {
   const model = createModel(options.provider, options.providerConfig)
+  const isOpenAIResponses = options.provider === 'openai-responses'
+  const openAIProviderOptions = isOpenAIResponses
+    ? {
+        openai: {
+          store: false,
+          ...(options.promptCacheKey ? { promptCacheKey: options.promptCacheKey } : {}),
+          ...(options.instructions ? { instructions: options.instructions } : {}),
+        },
+      }
+    : undefined
 
   const result = streamText({
     model,
+    ...(!isOpenAIResponses && options.instructions ? { instructions: options.instructions } : {}),
     messages: options.messages,
     maxOutputTokens: options.maxTokens,
     stopWhen: isStepCount(20),
-    ...(options.provider === 'openai-responses' && options.promptCacheKey
-      ? {
-          providerOptions: {
-            openai: {
-              store: false,
-              promptCacheKey: options.promptCacheKey,
-            },
-          },
-        }
-      : options.provider === 'openai-responses'
-        ? {
-            providerOptions: {
-              openai: {
-                store: false,
-              },
-            },
-          }
-        : {}),
+    ...(openAIProviderOptions ? { providerOptions: openAIProviderOptions } : {}),
     tools: {
       executeShell: tool({
         description:
