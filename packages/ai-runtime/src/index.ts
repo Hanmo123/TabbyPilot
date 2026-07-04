@@ -56,9 +56,14 @@ export async function* streamPilotChat(options: PilotRuntimeChatOptions): AsyncI
     tools: {
       executeShell: tool({
         description:
-          'Execute a shell command in the terminal. The command will be sent to the left terminal pane if available. You can specify how long to wait for the command output. If the output is not ready within the timeout, you can use readTerminalOutput to read it later.',
+          'Execute a shell command in the terminal. The command will be sent to the left terminal pane if available. You must also provide a concise 10-20 character summary of what the command does for the approval card title. You can specify how long to wait for the command output. If the output is not ready within the timeout, you can use readTerminalOutput to read it later.',
         inputSchema: z.object({
           command: z.string().describe('The shell command to execute'),
+          summary: z
+            .string()
+            .min(10)
+            .max(20)
+            .describe('A concise 10-20 character summary in the user\'s language describing what the command does. This is shown as the approval card title.'),
           timeoutSeconds: z
             .number()
             .optional()

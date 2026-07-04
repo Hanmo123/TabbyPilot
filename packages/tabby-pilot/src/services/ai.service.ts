@@ -11,6 +11,7 @@ const PILOT_INSTRUCTIONS = [
   "Match the user's language.",
   "Use the available tools when you need information from the system instead of guessing.",
   "Before running a shell command, briefly state what you are going to inspect or do.",
+  "When calling executeShell, always provide a 10-20 character summary in the user's language describing what the command does.",
   "Prefer minimal, read-only commands unless the user clearly asks for a change.",
   "When a tool returns output, base your answer on that output and say when something is uncertain.",
 ].join(" ");
@@ -74,12 +75,13 @@ export class PilotAIService {
     terminalTab?: BaseTerminalTabComponent<any> | null,
   ) {
     const command = input?.command || "";
+    const summary = input?.summary || "";
     const timeoutSeconds = input?.timeoutSeconds;
     const approved = await onToolCall({
       type: "tool-call",
       toolName: "executeShell",
       toolCallId,
-      args: { command },
+      args: { command, summary },
     });
 
     if (!approved) {

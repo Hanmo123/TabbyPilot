@@ -27,8 +27,8 @@
                     .tool-execution(*ngIf='part.type === "tool-call" && part.toolCall')
                         .tool-header
                             i.fas.fa-terminal.me-2
-                            strong Execute Shell Command
-                        .tool-command
+                            strong {{getToolCallTitle(part.toolCall)}}
+                        .tool-command(*ngIf='part.toolCall.args?.command')
                             code {{part.toolCall.args.command}}
                         .tool-actions(*ngIf='part.toolCall.status === "pending"')
                             button.btn.btn-sm.btn-success((click)='approveToolCall(part.toolCall)')

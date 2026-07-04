@@ -338,6 +338,18 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         return this.isLoading && message.id === this.currentMessageId
     }
 
+    getToolCallTitle(toolCall: ToolCall): string {
+        if (toolCall.toolName === 'executeShell') {
+            return toolCall.args?.summary || 'Execute Shell Command'
+        }
+
+        if (toolCall.toolName === 'readTerminalOutput') {
+            return 'Read Terminal Output'
+        }
+
+        return toolCall.toolName
+    }
+
     renderMessageContent(cacheKey: string, content?: string): string {
         if (!content) {
             this.markdownCache.delete(cacheKey)
