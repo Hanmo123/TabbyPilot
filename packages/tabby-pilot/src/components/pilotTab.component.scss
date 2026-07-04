@@ -1,3 +1,27 @@
+:host,
+.pilot-container,
+.pilot-messages,
+.message,
+.message-header,
+.message-content,
+.tool-execution,
+.tool-header,
+.tool-command,
+.tool-command code,
+.tool-status,
+.alert {
+    -webkit-user-select: text;
+    user-select: text;
+    cursor: text;
+}
+
+.pilot-actions button,
+.tool-actions button,
+.pilot-input-actions button {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
 .pilot-container {
     display: flex;
     flex-direction: column;
