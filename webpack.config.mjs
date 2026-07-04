@@ -7,6 +7,12 @@ import { AngularWebpackPlugin } from '@ngtools/webpack'
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
 const isDev = !!process.env.TABBY_DEV
+const sassLoader = {
+    loader: 'sass-loader',
+    options: {
+        api: 'modern',
+    },
+}
 
 export default {
     target: 'node',
@@ -47,12 +53,12 @@ export default {
             },
             {
                 test: /\.scss$/,
-                use: ['to-string-loader', 'css-loader', 'sass-loader'],
+                use: ['to-string-loader', 'css-loader', sassLoader],
                 include: /component\.scss$/,
             },
             {
                 test: /\.scss$/,
-                use: ['style-loader', 'css-loader', 'sass-loader'],
+                use: ['style-loader', 'css-loader', sassLoader],
                 exclude: /component\.scss$/,
             },
             {

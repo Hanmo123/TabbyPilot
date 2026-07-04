@@ -17,8 +17,8 @@ AI Agent plugin for Tabby terminal - Copilot-style chat assistant powered by Cla
 **Fastest way to test:**
 ```bash
 cd /path/to/tabby-pilot
-npm install
-npm run build
+bun install
+bun run build
 TABBY_PLUGINS=$(pwd) tabby --debug
 ```
 
@@ -30,8 +30,8 @@ Then configure your API key in Settings → Pilot and press `Cmd+Shift+C` to sta
 
 ```bash
 # Build the plugin
-npm install
-npm run build
+bun install
+bun run build
 
 # Start Tabby with plugin
 TABBY_PLUGINS=/path/to/tabby-pilot tabby --debug
@@ -42,7 +42,7 @@ TABBY_PLUGINS=/path/to/tabby-pilot tabby --debug
 ```bash
 # Install plugin
 cd ~/.config/Tabby/plugins/
-npm install /path/to/tabby-pilot
+bun add /path/to/tabby-pilot
 
 # Or use symlink for development
 cd ~/.config/Tabby/plugins/node_modules/
@@ -76,7 +76,7 @@ ln -s /path/to/tabby-pilot
 
 ```bash
 # Terminal 1: Watch and rebuild on changes
-npm run watch
+bun run watch
 
 # Terminal 2: Run Tabby
 TABBY_PLUGINS=$(pwd) tabby --debug
@@ -115,7 +115,7 @@ tabby-pilot/
 ### No Pilot tab in Settings?
 
 The plugin failed to load. Check:
-- Build was successful: `npm run build`
+- Build was successful: `bun run build`
 - Environment variable: `echo $TABBY_PLUGINS`
 - Package name starts with `tabby-`: `"name": "tabby-pilot"`
 
@@ -149,7 +149,7 @@ The plugin failed to load. Check:
 
 - Tabby Terminal 1.0.156 or later
 - Anthropic API key
-- Node.js 16+ (for building)
+- Bun 1.3+ (for install/build)
 
 ## Known Limitations
 

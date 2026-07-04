@@ -10,18 +10,18 @@
 
 ```bash
 # 开发模式（推荐）
-npm install
-npm run build
+bun install
+bun run build
 TABBY_PLUGINS=$(pwd) tabby --debug
 
 # 监听模式（自动重新构建）
-npm run watch  # Terminal 1
+bun run watch  # Terminal 1
 TABBY_PLUGINS=$(pwd) tabby --debug  # Terminal 2
 # 代码变更后需重启 Tabby
 
 # 安装到用户插件目录
 cd ~/.config/Tabby/plugins/
-npm install /path/to/tabby-pilot
+bun add /path/to/tabby-pilot
 # 或用符号链接: ln -s /path/to/tabby-pilot node_modules/
 ```
 

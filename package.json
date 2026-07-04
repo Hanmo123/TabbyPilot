@@ -12,11 +12,12 @@
   ],
   "main": "dist/index.js",
   "typings": "typings/index.d.ts",
+  "packageManager": "bun@1.3.14",
   "scripts": {
-    "build:ai": "npm -w @tabby-pilot/ai-runtime run build",
-    "build": "npm run build:ai && webpack --progress --color",
-    "watch": "npm run build:ai && webpack --progress --color --watch",
-    "prepublishOnly": "npm run build"
+    "build:ai": "bun run --cwd packages/ai-runtime build",
+    "build": "bun run build:ai && webpack --progress --color",
+    "watch": "bun run build:ai && webpack --progress --color --watch",
+    "prepublishOnly": "bun run build"
   },
   "workspaces": [
     "packages/ai-runtime"
