@@ -1,6 +1,7 @@
 import { Component, Input, HostBinding, OnInit, OnDestroy, Injector, ViewChild, ElementRef } from '@angular/core'
 import { BaseTabComponent, SplitTabComponent, RecoveryToken } from 'tabby-core'
 import { BaseTerminalTabComponent } from 'tabby-terminal'
+import { marked } from 'marked'
 import { PilotAIService } from '../services/ai.service'
 import { SessionService } from '../services/session.service'
 import { ChatMessage, ToolExecution, ToolCall, MessagePart, PilotProviderType } from '../api/interfaces'
@@ -32,6 +33,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
     private currentMessageId: string = ''
     private currentAssistantMessage: ChatMessage | null = null
     private abortController: AbortController | null = null
+    private markdownCache = new Map<string, { source: string, html: string }>()
 
     constructor(
         injector: Injector,
@@ -80,6 +82,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
     }
 
     ngOnDestroy(): void {
+        this.markdownCache.clear()
         this.destroy$.next()
         this.destroy$.complete()
     }
@@ -306,6 +309,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         this.currentProvider = newSession.provider || 'anthropic'
         this.messages = []
         this.error = null
+        this.markdownCache.clear()
         this.recoveryStateChangedHint.next()
     }
 
@@ -313,6 +317,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         this.session.clearSession(this.currentSessionId)
         this.messages = []
         this.error = null
+        this.markdownCache.clear()
     }
 
     closeSidebar(): void {
@@ -331,6 +336,30 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
 
     isStreamingMessage(message: ChatMessage): boolean {
         return this.isLoading && message.id === this.currentMessageId
+    }
+
+    renderMessageContent(cacheKey: string, content?: string): string {
+        if (!content) {
+            this.markdownCache.delete(cacheKey)
+            return ''
+        }
+
+        const cached = this.markdownCache.get(cacheKey)
+        if (cached?.source === content) {
+            return cached.html
+        }
+
+        const html = marked.parse(content, {
+            breaks: true,
+            gfm: true,
+        }) as string
+
+        this.markdownCache.set(cacheKey, {
+            source: content,
+            html,
+        })
+
+        return html
     }
 
     private appendAssistantText(textDelta: string): void {

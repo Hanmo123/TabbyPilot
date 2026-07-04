@@ -21,8 +21,9 @@
             
             // 如果有 parts，按顺序渲染；否则显示 content
             ng-container(*ngIf='message.parts && message.parts.length > 0; else simpleContent')
-                ng-container(*ngFor='let part of message.parts')
-                    .message-content(*ngIf='part.type === "text"') {{part.text}}
+                ng-container(*ngFor='let part of message.parts; let partIndex = index')
+                    .message-content.markdown-content(*ngIf='part.type === "text" && message.role === "assistant"', [innerHTML]='renderMessageContent(message.id + ":" + partIndex, part.text)')
+                    .message-content(*ngIf='part.type === "text" && message.role !== "assistant"') {{part.text}}
                     .tool-execution(*ngIf='part.type === "tool-call" && part.toolCall')
                         .tool-header
                             i.fas.fa-terminal.me-2
@@ -41,7 +42,8 @@
                             span.badge.bg-danger(*ngIf='part.toolCall.status === "rejected"') Rejected
             
             ng-template(#simpleContent)
-                .message-content(*ngIf='message.content') {{message.content}}
+                .message-content.markdown-content(*ngIf='message.content && message.role === "assistant"', [innerHTML]='renderMessageContent(message.id, message.content)')
+                .message-content(*ngIf='message.content && message.role !== "assistant"') {{message.content}}
 
             .message-loading(*ngIf='isStreamingMessage(message)')
                 i.fas.fa-circle-notch.fa-spin

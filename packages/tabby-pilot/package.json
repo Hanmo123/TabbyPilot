@@ -53,7 +53,9 @@
     "webpack": "^5.76.2",
     "webpack-cli": "^5.0.1"
   },
-  "dependencies": {},
+  "dependencies": {
+    "marked": "^18.0.5"
+  },
   "peerDependencies": {
     "@angular/animations": "^15",
     "@angular/common": "^15",
