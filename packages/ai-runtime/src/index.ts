@@ -61,9 +61,7 @@ export async function* streamPilotChat(options: PilotRuntimeChatOptions): AsyncI
           command: z.string().describe('The shell command to execute'),
           summary: z
             .string()
-            .min(10)
-            .max(20)
-            .describe('A concise 10-20 character summary in the user\'s language describing what the command does. This is shown as the approval card title.'),
+            .describe('A concise 5-20 character summary in the user\'s language describing what the command does. This is shown as the approval card title.'),
           timeoutSeconds: z
             .number()
             .optional()
